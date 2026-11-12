@@ -10,7 +10,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--allow-missing", action="store_true")
 args = parser.parse_args()
 owner = os.environ["GITHUB_REPOSITORY_OWNER"]
-url = "https://api.github.com/users/" + quote(owner, safe="") + "/packages/container/personal-knowledge"
+package_name = os.getenv("GH_PACKAGE", "personal-knowledge-private")
+url = "https://api.github.com/users/" + quote(owner, safe="") + "/packages/container/" + quote(package_name, safe="")
 request = Request(url, headers={
     "Authorization": "Bearer " + os.environ["GH_TOKEN"],
     "Accept": "application/vnd.github+json",

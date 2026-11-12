@@ -1,0 +1,56 @@
+name: Initialize and verify private container package
+on:
+  push:
+    paths: [".github/workflows/initialize-private-package.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  initialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Initialize an empty package and verify privacy before uploading application code
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, tempfile, time
+          from urllib.error import HTTPError
+          from urllib.request import Request, urlopen
+          name = 'personal-knowledge-private'
+          owner = 'mrau66'
+          base = f'https://api.github.com/users/{owner}/packages/container/{name}'
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}
+          def call(url, method='GET'):
+              with urlopen(Request(url, headers=headers, method=method), timeout=30) as response:
+                  content = response.read()
+                  return json.loads(content) if content else None
+          try:
+              existing = call(base)
+          except HTTPError as error:
+              if error.code != 404:
+                  raise
+          else:
+              if existing.get('visibility') != 'private':
+                  raise SystemExit('An existing package is not private; refusing to modify it.')
+              print('Existing package verified private; initialization is unnecessary.')
+              raise SystemExit(0)
+          subprocess.run(['docker', 'login', 'ghcr.io', '-u', owner, '--password-stdin'], input=os.environ['GH_TOKEN'].encode(), check=True)
+          image = f'ghcr.io/{owner}/{name}:bootstrap'
+          with tempfile.TemporaryDirectory() as directory:
+              pathlib.Path(directory, 'Dockerfile').write_text('FROM scratch\nLABEL purpose="private-package-initialization"\nCMD ["/not-an-application"]\n')
+              subprocess.run(['docker', 'build', '--provenance=false', '-t', image, directory], check=True)
+          subprocess.run(['docker', 'push', image], check=True)
+          time.sleep(2)
+          package = call(base)
+          print('New package visibility:', package.get('visibility'))
+          if package.get('visibility') != 'private':
+              versions = call(base + '/versions')
+              if len(versions) == 1 and versions[0].get('metadata', {}).get('container', {}).get('tags') == ['bootstrap']:
+                  call(base, 'DELETE')
+                  print('Removed the empty bootstrap package after failed privacy verification.')
+              raise SystemExit('Private package could not be established. No application code was uploaded.')
+          print('Verified private package. Application publication can now proceed.')
+          PY
