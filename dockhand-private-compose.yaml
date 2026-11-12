@@ -29,7 +29,7 @@ services:
         condition: service_healthy
 
   data-init:
-    image: ghcr.io/mrau66/personal-knowledge:latest
+    image: ghcr.io/mrau66/personal-knowledge-private:latest
     pull_policy: always
     user: "0:0"
     restart: "no"
@@ -41,7 +41,7 @@ services:
     network_mode: none
 
   knowledge:
-    image: ghcr.io/mrau66/personal-knowledge:latest
+    image: ghcr.io/mrau66/personal-knowledge-private:latest
     pull_policy: always
     container_name: personal-knowledge
     restart: unless-stopped
