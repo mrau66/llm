@@ -30,11 +30,20 @@ jobs:
           targets = [v for v in versions if v.get('name') == expected]
           if not targets:
               raise SystemExit('Expected version not found; no unrelated versions will be removed.')
-          for version in targets:
-              call('https://api.github.com/user/packages/container/personal-knowledge/versions/' + str(version['id']), 'DELETE')
-              print('Removed newly uploaded version', version['id'])
-          remaining = call(base + '/versions')
-          if any(v.get('name') == expected for v in remaining):
-              raise SystemExit('Removal could not be verified')
-          print('Verified: the unverified image version is no longer active.')
+          if len(versions) != 1 or len(targets) != 1:
+              raise SystemExit('Package has other versions; refusing to remove unrelated data.')
+          try:
+              call(base, 'DELETE')
+          except HTTPError as error:
+              detail = json.loads(error.read()).get('message', '')
+              raise SystemExit(f'Cleanup failed: HTTP {error.code}: {detail}')
+          try:
+              call(base)
+          except HTTPError as error:
+              if error.code == 404:
+                  print('Verified: the newly created public package has been removed.')
+              else:
+                  raise
+          else:
+              raise SystemExit('Package is still visible after removal')
           PY
