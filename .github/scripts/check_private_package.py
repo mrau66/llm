@@ -24,6 +24,8 @@ except HTTPError as error:
         print("No visible existing package; GHCR creates new packages as private.")
         raise SystemExit(0)
     raise SystemExit(f"Cannot verify package visibility (HTTP {error.code}); publication check stopped.")
-if package.get("visibility") != "private":
-    raise SystemExit("The existing package is not private. Resolve its visibility before publishing.")
+visibility = package.get("visibility")
+print("Package visibility reported by GitHub:", visibility or "not supplied")
+if visibility != "private":
+    raise SystemExit("Cannot confirm a private package. Resolve its visibility before publishing.")
 print("Verified: container package is private.")
