@@ -1,0 +1,40 @@
+name: Remove unverified image version
+on:
+  push:
+    paths: [".github/workflows/remove-unverified-image.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove only the version uploaded by this session
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError
+          base = 'https://api.github.com/users/mrau66/packages/container/personal-knowledge'
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}
+          def call(url, method='GET'):
+              with urlopen(Request(url, headers=headers, method=method), timeout=30) as response:
+                  data = response.read()
+                  return json.loads(data) if data else None
+          versions = call(base + '/versions')
+          expected = 'sha256:d2accfd3da8cae403fe9eec89cf205acf0fbca52bc8a159a9a64eb9356ff5c9b'
+          targets = [v for v in versions if v.get('name') == expected]
+          if not targets:
+              raise SystemExit('Expected version not found; no unrelated versions will be removed.')
+          for version in targets:
+              call('https://api.github.com/user/packages/container/personal-knowledge/versions/' + str(version['id']), 'DELETE')
+              print('Removed newly uploaded version', version['id'])
+          remaining = call(base + '/versions')
+          if any(v.get('name') == expected for v in remaining):
+              raise SystemExit('Removal could not be verified')
+          print('Verified: the unverified image version is no longer active.')
+          PY
