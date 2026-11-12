@@ -31,7 +31,7 @@ jobs:
       - name: Refuse to overwrite a public package
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 .github/scripts/check_private_package.py --allow-missing
+        run: python3 .github/scripts/check_private_package.py
 
       - name: Test archive and integration logic
         run: python3 -m unittest discover -s tests -v
