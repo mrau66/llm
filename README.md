@@ -11,7 +11,9 @@ Markdown notes are written to an existing Obsidian vault. Original downloads and
 
 ## Container image
 
-The workflow publishes **private** images to `ghcr.io/mrau66/personal-knowledge:latest` and `ghcr.io/mrau66/personal-knowledge:sha-COMMIT`. This source repository is public; the package must remain private. Check the Actions run before assuming the image exists. Publication tests the application logic, builds the actual image, and checks a running MCP server before uploading. It also checks package visibility.
+**Publication status: blocked on registry privacy.** The source tests, Docker build, and real MCP smoke test passed. GitHub reported the initial package as public, so that newly created package and its verified OCI artifacts were removed. An empty bootstrap package under `personal-knowledge-private` also came back public and was removed without uploading the application. There is currently no verified private application image. The publication workflow requires private visibility before uploading application code. Do not switch a working stack to the registry image until this is resolved.
+
+The workflow publishes **private** images to `ghcr.io/mrau66/personal-knowledge-private:latest` and `ghcr.io/mrau66/personal-knowledge-private:sha-COMMIT`. This source repository is public; the package must remain private. Check the Actions run before assuming the image exists. Publication tests the application logic, builds the actual image, and checks a running MCP server before uploading. It also checks package visibility.
 
 For private pulls, configure `ghcr.io` credentials in Dockhand using username `mrau66` and a GitHub personal access token (classic) with `read:packages`. Keep tokens out of YAML and chat. GitHub Actions uses its own built-in token to publish.
 
