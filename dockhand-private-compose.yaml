@@ -1,0 +1,92 @@
+name: personal-knowledge
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    mem_limit: 6g
+
+  model-init:
+    image: ollama/ollama:latest
+    restart: "on-failure:3"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ["ollama pull nomic-embed-text"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  data-init:
+    image: ghcr.io/mrau66/personal-knowledge:latest
+    pull_policy: always
+    user: "0:0"
+    restart: "no"
+    entrypoint: ["python", "-c"]
+    command:
+      - "import os; os.chown('/data', 1000, 1000); os.chmod('/data', 0o700)"
+    volumes:
+      - /home/mike/knowledge-base/data:/data
+    network_mode: none
+
+  knowledge:
+    image: ghcr.io/mrau66/personal-knowledge:latest
+    pull_policy: always
+    container_name: personal-knowledge
+    restart: unless-stopped
+    init: true
+    user: "1000:1000"
+    environment:
+      VAULT_PATH: /vault
+      DATA_PATH: /data
+      OLLAMA_URL: http://ollama:11434
+      EMBED_MODEL: nomic-embed-text
+      INDEX_EXISTING_NOTES: "false"
+      TRANSCRIPT_LANGUAGES: en
+    volumes:
+      - type: bind
+        source: /srv/lsio/obsidian/config/Second Brain
+        target: /vault
+        bind:
+          create_host_path: false
+      - /home/mike/knowledge-base/data:/data
+    depends_on:
+      model-init:
+        condition: service_completed_successfully
+      data-init:
+        condition: service_completed_successfully
+    networks:
+      default:
+      zeroclaw-knowledge:
+        aliases: [knowledge]
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "python", "/app/smoke_mcp.py"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  ollama:
+
+networks:
+  zeroclaw-knowledge:
+    external: true
+    name: zeroclaw-knowledge

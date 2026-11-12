@@ -1,0 +1,8 @@
+**
+!Dockerfile
+!requirements.txt
+!kb.py
+!service.py
+!mcp_server.py
+!integration.py
+!smoke_mcp.py

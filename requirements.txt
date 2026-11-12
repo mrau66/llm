@@ -1,0 +1,5 @@
+mcp>=1.28,<2
+tomlkit>=0.13,<1
+trafilatura>=2.0,<3
+pypdf>=5,<7
+youtube-transcript-api>=1.2,<2

@@ -1,0 +1,11 @@
+# Optional: merge this network stanza into the existing Dockhand ZeroClaw stack
+# so the connection survives container recreation. Preserve all other settings.
+services:
+  zeroclaw:
+    networks:
+      - default
+      - zeroclaw-knowledge
+networks:
+  zeroclaw-knowledge:
+    external: true
+    name: zeroclaw-knowledge
