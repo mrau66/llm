@@ -26,6 +26,7 @@ jobs:
                   data = response.read()
                   return json.loads(data) if data else None
           versions = call(base + '/versions')
+          print('Package versions:', json.dumps([{'id': v.get('id'), 'name': v.get('name'), 'created': v.get('created_at'), 'tags': v.get('metadata', {}).get('container', {}).get('tags', [])} for v in versions]))
           expected = 'sha256:d2accfd3da8cae403fe9eec89cf205acf0fbca52bc8a159a9a64eb9356ff5c9b'
           targets = [v for v in versions if v.get('name') == expected]
           if not targets:
