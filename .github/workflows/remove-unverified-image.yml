@@ -31,7 +31,12 @@ jobs:
           targets = [v for v in versions if v.get('name') == expected]
           if not targets:
               raise SystemExit('Expected version not found; no unrelated versions will be removed.')
-          if len(versions) != 1 or len(targets) != 1:
+          expected_artifacts = {
+              expected,
+              'sha256:43ab5a814424d9929efd8007041c19c25f19d7dce21bb5444f10662abde5ed86',
+              'sha256:c69fb0c20d2dbfe271199ad0ed069679b647bec21d95b86208380db9a834a561',
+          }
+          if {v.get('name') for v in versions} != expected_artifacts or len(targets) != 1:
               raise SystemExit('Package has other versions; refusing to remove unrelated data.')
           try:
               call(base, 'DELETE')
